@@ -3,7 +3,7 @@ from dash import dcc, html, Input, Output
 import pandas as pd
 import plotly.express as px
 
-# Load and preprocess data (replace with your data file if needed)
+# Load and preprocess data
 file_path = 'data/US_Regional_Sales_Data.csv'
 sales_data = pd.read_csv(file_path)
 

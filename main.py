@@ -22,71 +22,15 @@ for col in date_columns:
 sales_data['Unit Cost'] = sales_data['Unit Cost'].replace('[\$,]', '', regex=True).astype(float)
 sales_data['Unit Price'] = sales_data['Unit Price'].replace('[\$,]', '', regex=True).astype(float)
 
+# add total sales column
 sales_data['Total Sales'] = sales_data['Order Quantity'] * sales_data['Unit Price']
 
 # Dashboard app setup
-# app = dash.Dash(__name__)
 app = dash.Dash(__name__, external_stylesheets=[
     "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
 ])
 
-
-# Layout of the dashboard
-# app.layout = html.Div([
-#     html.H1("Sales Dashboard", style={'text-align': 'center'}),
-    
-#     # KPI Section
-#     html.Div([
-#         html.Div([
-#             html.H3("Total Sales"),
-#             html.H4(f"${sales_data['Total Sales'].sum():,.2f}")
-#         ], style={'display': 'inline-block', 'margin': '20px'}),
-        
-#         html.Div([
-#             html.H3("Total Orders"),
-#             html.H4(f"{sales_data['OrderNumber'].nunique()}")
-#         ], style={'display': 'inline-block', 'margin': '20px'}),
-        
-#         html.Div([
-#             html.H3("Average Discount"),
-#             html.H4(f"{sales_data['Discount Applied'].mean() * 100:.2f}%")
-#         ], style={'display': 'inline-block', 'margin': '20px'}),
-        
-#         html.Div([
-#             html.H3("Average Unit Price"),
-#             html.H4(f"${sales_data['Unit Price'].mean():,.2f}")
-#         ], style={'display': 'inline-block', 'margin': '20px'}),
-#     ]),
-    
-#     # Filters
-#     html.Div([
-#         html.Label("Date Range"),
-#         dcc.DatePickerRange(
-#             id='date-picker',
-#             start_date=sales_data['OrderDate'].min(),
-#             end_date=sales_data['OrderDate'].max()
-#         ),
-#         html.Label("Sales Channel"),
-#         dcc.Dropdown(
-#             id='channel-dropdown',
-#             options=[{'label': ch, 'value': ch} for ch in sales_data['Sales Channel'].unique()],
-#             multi=True,
-#             placeholder="Select Sales Channel"
-#         ),
-#         html.Label("Warehouse"),
-#         dcc.Dropdown(
-#             id='warehouse-dropdown',
-#             options=[{'label': wh, 'value': wh} for wh in sales_data['WarehouseCode'].unique()],
-#             multi=True,
-#             placeholder="Select Warehouse"
-#         )
-#     ], style={'margin': '20px'}),
-    
-#     # Graphs
-#     dcc.Graph(id='sales-over-time'),
-#     dcc.Graph(id='sales-by-channel'),
-#     dcc.Graph(id='sales-by-warehouse')
-# ])
+# App layout
 
 app.layout = html.Div([
     html.Div([
@@ -126,6 +70,7 @@ app.layout = html.Div([
         ], className="col-md-2"),
     ], className="row justify-content-center gy-4"),
     ], className='container-fluid'),
+    
     # Filters Section
     html.Div([html.Hr(className='shadow-sm')], className="container"),
     html.Div([

@@ -1,13 +1,14 @@
+# imports
 import dash
 from dash import dcc, html, Input, Output
 import pandas as pd
 import plotly.express as px
 
-# Load and preprocess data
+# Load data
 file_path = 'data/US_Regional_Sales_Data.csv'
 sales_data = pd.read_csv(file_path)
 
-# Data cleaning
+# Data cleaning and type conversions
 date_columns = [
     'ProcuredDate',
     'OrderDate',
@@ -33,6 +34,7 @@ app = dash.Dash(__name__, external_stylesheets=[
 # App layout
 
 app.layout = html.Div([
+    # title and date range display
     html.Div([
         html.H1("Sales Dashboard", className="text-center text-primary my-4"),
         html.H3(f"{sales_data['OrderDate'].min().strftime('%B %d, %Y')} - {sales_data['OrderDate'].max().strftime('%B %d, %Y')}", className="text-center text-secondary", id="date-range-display"),
@@ -69,6 +71,10 @@ app.layout = html.Div([
                 html.H4(f"${sales_data['Unit Price'].mean():,.2f}", className="text-success", id='kpi-average-unit-price')
             ], className="card p-3 shadow-sm")
         ], className="col-md-2"),
+        html.Div([
+            html.H3("Avg. Sales per Order", className="text-primary"),
+            html.H4(id='kpi-average-sales-per-order', className="text-success")
+        ], className="col-md-3 card p-3 shadow-sm"),
     ], className="row justify-content-center gy-4"),
     ], className='container-fluid'),
     
@@ -135,6 +141,7 @@ app.layout = html.Div([
      Output('kpi-total-orders', 'children'),
      Output('kpi-average-discount', 'children'),
      Output('kpi-average-unit-price', 'children'),
+     Output('kpi-average-sales-per-order', 'children'),
      Output('sales-over-time', 'figure'),
      Output('sales-by-channel', 'figure'),
      Output('sales-by-warehouse', 'figure'),
@@ -145,6 +152,7 @@ app.layout = html.Div([
      Input('warehouse-dropdown', 'value')]
 )
 def update_graphs(start_date, end_date, channels, warehouses):
+    # check date selected within data range
     if pd.to_datetime(end_date) > sales_data['OrderDate'].max():
         end_date = sales_data['OrderDate'].max()
     if pd.to_datetime(start_date) < sales_data['OrderDate'].min():
@@ -154,6 +162,8 @@ def update_graphs(start_date, end_date, channels, warehouses):
     filtered_data = sales_data[
         (sales_data['OrderDate'] >= start_date) & (sales_data['OrderDate'] <= end_date)
     ]
+    
+    # filter based on channels and warehouses if provided
     if channels:
         filtered_data = filtered_data[filtered_data['Sales Channel'].isin(channels)]
     if warehouses:
@@ -165,40 +175,47 @@ def update_graphs(start_date, end_date, channels, warehouses):
     average_discount = f"{filtered_data['Discount Applied'].mean() * 100:.2f}%"
     average_unit_price = f"${filtered_data['Unit Price'].mean():,.2f}"
     
-    # Sales over time
+    avg_sales_per_order = (
+        filtered_data['Total Sales'].sum() / filtered_data['OrderNumber'].nunique()
+        if filtered_data['OrderNumber'].nunique() > 0 else 0
+    )
+    avg_sales_per_order_display = f"${avg_sales_per_order:,.2f}"
+    
+    # Sales over time figure
     sales_over_time_fig = px.line(
         filtered_data.groupby('OrderDate')['Total Sales'].sum().reset_index(),
         x='OrderDate', y='Total Sales',
         title="Sales Over Time"
     )
     
-    # Sales by channel
+    # Sales by channel figure
     sales_by_channel_fig = px.pie(
         filtered_data.groupby('Sales Channel')['Total Sales'].sum().reset_index(),
         names='Sales Channel', values='Total Sales',
         title="Sales by Channel"
     )
     
-    # Sales by warehouse
+    # Sales by warehouse figure
     sales_by_warehouse_fig = px.bar(
-    filtered_data,
-    x='WarehouseCode',
-    y='Total Sales',
-    color='WarehouseCode',  # Add color differentiation by WarehouseCode
-    title="Sales by Warehouse",
-    labels={'WarehouseCode': 'Warehouse', 'Total Sales': 'Total Sales'},
-    text_auto=False  # Automatically display text on bars
-)
+        filtered_data,
+        x='WarehouseCode',
+        y='Total Sales',
+        color='WarehouseCode',  # Add color differentiation by WarehouseCode
+        title="Sales by Warehouse",
+        labels={'WarehouseCode': 'Warehouse', 'Total Sales': 'Total Sales'},
+        text_auto=False # Disable automatic text display on bars
+    )
     # Remove x-axis tick labels
     sales_by_warehouse_fig.update_layout(
         xaxis=dict(showticklabels=False)  # Hide the x-axis labels
-)
+    )
     
+    # udpate date range display based on date filter
     date_range_display = f"{pd.to_datetime(start_date).strftime('%B %d, %Y')} - {pd.to_datetime(end_date).strftime('%B %d, %Y')}"
     
     return total_sales, total_orders, average_discount, average_unit_price, \
            sales_over_time_fig, sales_by_channel_fig, sales_by_warehouse_fig, \
-           date_range_display
+           date_range_display, avg_sales_per_order_display
 
 # Run the app
 if __name__ == '__main__':
